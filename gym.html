@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gym Tracker PWA</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <style>
+    :root {
+      --bg: #000000;
+      --card-bg: #1c1c1e;
+      --card-inner: #2c2c2e;
+      --accent: #0a84ff;
+      --accent-green: #30d158;
+      --text: #ffffff;
+      --subtext: #8e8e93;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+      padding-bottom: 40px;
+    }
+    h2, h3, h4 { margin-top: 0; color: #f0f0f0; margin-bottom: 8px; }
+    .card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 15px;
+    }
+    label {
+      font-size: 12px;
+      color: var(--subtext);
+      margin-bottom: 4px;
+      display: block;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    select, input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 4px 0 10px 0;
+      border-radius: 10px;
+      border: none;
+      box-sizing: border-box;
+      font-size: 16px;
+      outline: none;
+    }
+    select, input {
+      background: var(--card-inner);
+      color: #fff;
+      -webkit-appearance: none;
+    }
+    input[type="date"] {
+      color-scheme: dark;
+    }
+    select {
+      background-image: url('data:image/svg+xml;utf8,<svg fill="white" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+    button {
+      background: var(--accent);
+      color: #fff;
+      font-weight: bold;
+      margin-top: 8px;
+      padding: 14px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:active {
+      opacity: 0.8;
+    }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    
+    /* Last Record Highlight Box */
+    .last-record-box {
+      background: rgba(10, 132, 255, 0.12);
+      border: 1px solid rgba(10, 132, 255, 0.4);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .last-record-title {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .last-record-detail {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .last-record-date {
+      font-size: 11px;
+      color: var(--subtext);
+      margin-top: 2px;
+    }
+
+    ul { list-style: none; padding: 0; margin: 0; }
+    li {
+      background: var(--card-inner);
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .date-tag { font-size: 12px; color: var(--subtext); text-align: right; }
+    
+    /* Bar Chart Styling */
+    .bar-container {
+      display: flex;
+      align-items: flex-end;
+      height: 140px;
+      gap: 6px;
+      margin-top: 15px;
+      padding-top: 10px;
+      border-bottom: 1px solid #3a3a3c;
+    }
+    .bar {
+      flex: 1;
+      background: var(--accent);
+      border-radius: 4px 4px 0 0;
+      text-align: center;
+      font-size: 9px;
+      color: #fff;
+      padding-top: 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow: hidden;
+    }
+    .empty-state {
+      color: var(--subtext);
+      font-size: 13px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🏋️‍♂️ Workout Tracker</h2>
+
+  <!-- Input Form Card -->
+  <div class="card">
+    <h3>Log Exercise</h3>
+    
+    <label for="exerciseSelect">Select Exercise:</label>
+    <select id="exerciseSelect" onchange="updatePreviousRecordInfo()">
+      <optgroup label="Chest">
+        <option value="Barbell Bench Press">Barbell Bench Press</option>
+        <option value="Incline Dumbbell Press">Incline Dumbbell Press</option>
+        <option value="Dumbbell Flyes">Dumbbell Flyes</option>
+        <option value="Chest Dip">Chest Dip</option>
+        <option value="Cable Crossover">Cable Crossover</option>
+        <option value="Push-ups">Push-ups</option>
+      </optgroup>
+
+      <optgroup label="Back">
+        <option value="Lat Pulldown">Lat Pulldown</option>
+        <option value="Barbell Deadlift">Barbell Deadlift</option>
+        <option value="Bent Over Barbell Row">Bent Over Barbell Row</option>
+        <option value="Seated Cable Row">Seated Cable Row</option>
+        <option value="Single-Arm Dumbbell Row">Single-Arm Dumbbell Row</option>
+        <option value="Pull-ups">Pull-ups</option>
+      </optgroup>
+
+      <optgroup label="Shoulders">
+        <option value="Overhead Barbell Press">Overhead Barbell Press</option>
+        <option value="Dumbbell Shoulder Press">Dumbbell Shoulder Press</option>
+        <option value="Dumbbell Lateral Raise">Dumbbell Lateral Raise</option>
+        <option value="Face Pull">Face Pull</option>
+        <option value="Front Dumbbell Raise">Front Dumbbell Raise</option>
+      </optgroup>
+
+      <optgroup label="Legs">
+        <option value="Barbell Squat">Barbell Squat</option>
+        <option value="Leg Press">Leg Press</option>
+        <option value="Romanian Deadlift">Romanian Deadlift</option>
+        <option value="Leg Extension">Leg Extension</option>
+        <option value="Lying Leg Curl">Lying Leg Curl</option>
+        <option value="Standing Calf Raise">Standing Calf Raise</option>
+      </optgroup>
+
+      <optgroup label="Biceps">
+        <option value="Barbell Curl">Barbell Curl</option>
+        <option value="Dumbbell Bicep Curl">Dumbbell Bicep Curl</option>
+        <option value="Hammer Curl">Hammer Curl</option>
+        <option value="Preacher Curl">Preacher Curl</option>
+      </optgroup>
+
+      <optgroup label="Triceps">
+        <option value="Tricep Rope Pushdown">Tricep Rope Pushdown</option>
+        <option value="Skull Crusher">Skull Crusher</option>
+        <option value="Overhead Dumbbell Extension">Overhead Dumbbell Extension</option>
+        <option value="Dips">Dips</option>
+      </optgroup>
+
+      <optgroup label="Core & Cardio">
+        <option value="Hanging Leg Raise">Hanging Leg Raise</option>
+        <option value="Cable Crunch">Cable Crunch</option>
+        <option value="Plank">Plank</option>
+        <option value="Treadmill Running">Treadmill Running</option>
+      </optgroup>
+    </select>
+
+    <!-- Dynamic Previous Record Box -->
+    <div id="previousRecordBox" class="last-record-box">
+      <div class="last-record-title">⚡ LAST SESSION RECORD</div>
+      <div class="last-record-detail" id="lastRecordText">No previous session recorded</div>
+      <div class="last-record-date" id="lastRecordDate">--</div>
+    </div>
+
+    <!-- Date Picker Field -->
+    <label for="workoutDate">Workout Date & Day:</label>
+    <input type="date" id="workoutDate">
+
+    <div class="grid-3">
+      <div>
+        <label for="sets">Sets:</label>
+        <input type="number" id="sets" placeholder="3">
+      </div>
+      <div>
+        <label for="reps">Reps:</label>
+        <input type="number" id="reps" placeholder="10">
+      </div>
+      <div>
+        <label for="weight">Weight (kg):</label>
+        <input type="number" id="weight" placeholder="60">
+      </div>
+    </div>
+
+    <button onclick="saveSet()">Save Session</button>
+  </div>
+
+  <!-- Progress Chart Card -->
+  <div class="card">
+    <h3>📊 Progress (Total Volume)</h3>
+    <div class="bar-container" id="chart"></div>
+  </div>
+
+  <!-- History Card -->
+  <div class="card">
+    <h3>Workout History</h3>
+    <ul id="logList"></ul>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Set default date to today in YYYY-MM-DD
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('workoutDate').value = today;
+
+      updatePreviousRecordInfo();
+      renderLogs();
+      renderChart();
+    });
+
+    // Helper to format date with Day Name
+    function formatDateWithDay(dateString) {
+      if(!dateString) return '';
+      const parts = dateString.split('-');
+      if(parts.length < 3) return dateString;
+      const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+      return dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // Function to check and show last performance for the selected exercise
+    function updatePreviousRecordInfo() {
+      const selectedExercise = document.getElementById('exerciseSelect').value;
+      let logs = JSON.parse(localStorage.getItem('gym_v3_date_logs')) || [];
+
+      // Filter logs for this exercise
+      const previousLogs = logs.filter(log => log.exercise === selectedExercise);
+
+      const recordTextEl = document.getElementById('lastRecordText');
+      const recordDateEl = document.getElementById('lastRecordDate');
+
+      if (previousLogs.length > 0) {
+        // Get most recent entry
+        const last = previousLogs[previousLogs.length - 1];
+        recordTextEl.innerHTML = `${last.sets} Sets × ${last.reps} Reps @ <span style="color:#30d158; font-size:17px;">${last.weight} kg</span>`;
+        recordDateEl.innerText = `Recorded on: ${formatDateWithDay(last.date)}`;
+      } else {
+        recordTextEl.innerText = "No previous session recorded yet";
+        recordDateEl.innerText = "Enter your first session below";
+      }
+    }
+
+    function saveSet() {
+      const exercise = document.getElementById('exerciseSelect').value;
+      const workoutDate = document.getElementById('workoutDate').value;
+      const sets = parseInt(document.getElementById('sets').value);
+      const reps = parseInt(document.getElementById('reps').value);
+      const weight = parseFloat(document.getElementById('weight').value);
+
+      if (!exercise || !workoutDate || isNaN(sets) || isNaN(reps) || isNaN(weight)) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      const totalVolume = sets * reps * weight;
+
+      const newEntry = {
+        id: Date.now(),
+        exercise,
+        date: workoutDate,
+        sets,
+        reps,
+        weight,
+        volume: totalVolume
+      };
+
+      let logs = JSON.parse(localStorage.getItem('gym_v3_date_logs')) || [];
+      logs.push(newEntry);
+      
+      // Sort logs chronologically by date
+      logs.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      localStorage.setItem('gym_v3_date_logs', JSON.stringify(logs));
+
+      // Reset inputs
+      document.getElementById('sets').value = '';
+      document.getElementById('reps').value = '';
+      document.getElementById('weight').value = '';
+
+      updatePreviousRecordInfo();
+      renderLogs();
+      renderChart();
+    }
+
+    function renderLogs() {
+      const list = document.getElementById('logList');
+      list.innerHTML = '';
+      let logs = JSON.parse(localStorage.getItem('gym_v3_date_logs')) || [];
+
+      if (logs.length === 0) {
+        list.innerHTML = '<li class="empty-state">No workout history yet.</li>';
+        return;
+      }
+
+      // Display newest date at top
+      logs.slice().reverse().forEach(log => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div>
+            <strong>${log.exercise}</strong><br>
+            <small style="color:#aaa">${log.sets} Sets × ${log.reps} Reps @ <b style="color:#fff">${log.weight} kg</b></small>
+          </div>
+          <div class="date-tag">
+            <b>${formatDateWithDay(log.date)}</b><br>
+            <small style="color:#0a84ff">${log.volume} kg vol</small>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function renderChart() {
+      const chart = document.getElementById('chart');
+      chart.innerHTML = '';
+      let logs = JSON.parse(localStorage.getItem('gym_v3_date_logs')) || [];
+      
+      if (logs.length === 0) {
+        chart.innerHTML = '<span class="empty-state">Log workouts to view progress chart</span>';
+        return;
+      }
+
+      const lastEntries = logs.slice(-7);
+      const maxVol = Math.max(...lastEntries.map(e => e.volume), 1);
+
+      lastEntries.forEach(entry => {
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const heightPercent = (entry.volume / maxVol) * 100;
+        bar.style.height = Math.max(heightPercent, 18) + '%';
+        bar.innerText = entry.volume;
+        chart.appendChild(bar);
+      });
+    }
+  </script>
+</body>
+</html>
